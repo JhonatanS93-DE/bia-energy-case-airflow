@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: bia_user
+      POSTGRES_PASSWORD: bia_password
+      POSTGRES_DB: bia_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  airflow-webserver:
+    image: apache/airflow:2.7.2-python3.10
+    container_name: airflow-webserver
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://bia_user:bia_password@postgres:5432/bia_db
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__LOGGING__REMOTE_LOGGING: 'False'
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+      AIRFLOW__LOGGING__DAG_PROCESSOR_MANAGER_LOG_LOCATION: /opt/airflow/logs/dag_processor_manager/dag_processor_manager.log
+      AIRFLOW__LOGGING__LOGGING_LEVEL: 'INFO'
+      AIRFLOW__WEBSERVER__SECRET_KEY: "NAYCqFGD2wKH9_a9fhtvcomyM2QRxeZ5sAW8"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - ./reports:/opt/airflow/reports
+      - ./logs:/opt/airflow/logs
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:2.7.2-python3.10
+    container_name: airflow-scheduler
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://bia_user:bia_password@postgres:5432/bia_db
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__LOGGING__REMOTE_LOGGING: 'False'
+      AIRFLOW__LOGGING__BASE_LOG_FOLDER: /opt/airflow/logs
+      AIRFLOW__LOGGING__DAG_PROCESSOR_MANAGER_LOG_LOCATION: /opt/airflow/logs/dag_processor_manager/dag_processor_manager.log
+      AIRFLOW__LOGGING__LOGGING_LEVEL: 'INFO'
+      AIRFLOW__WEBSERVER__SECRET_KEY: "NAYCqFGD2wKH9_a9fhtvcomyM2QRxeZ5sAW8"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./data:/opt/airflow/data
+      - ./reports:/opt/airflow/reports
+      - ./logs:/opt/airflow/logs
+    depends_on:
+      - postgres
+    command: scheduler
+
+volumes:
+  postgres_data:
